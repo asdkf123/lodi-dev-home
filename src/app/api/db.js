@@ -1,30 +1,35 @@
-import mysql from 'mysql2/promise';
+const { createPool } = require("mysql");
 
-const connection = await mysql.createConnection({
+const pool = createPool({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
-try {
-  const [results, fields] = await connection.query(
-    'SELECT * FROM visitors'
-  );
-  console.log(results);
-  console.log(fields);
-} catch (err) {
-  console.error(err);
+pool.getConnection((err, conn) => {
+  if (err) console.log("Error connecting to db...");
+  else console.log("Connected to db...!");
+  conn.release();
+});
+
+const executeQuery = (query, arrParams) => {
+  return new Promise((resolve, reject) => {
+    try {
+      pool.query(query, arrParams, (err, data) => {
+        if (err) {
+          console.log("Error in executing the query");
+          reject(err);
+        }
+        console.log("------db.js------");
+        console.log(data);
+        resolve(data);
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
-// Using placeholders
-try {
-  const [results] = await connection.query(
-    'SELECT * FROM visitors'
-  );
-} catch (err) {
-  console.error(err);
-}
-
-export default connection;
+module.exports = { executeQuery };
